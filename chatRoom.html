@@ -20,8 +20,7 @@
 				var msg = $('#message').val();
 				var str = JSON.stringify({
 					name: name,
-					message: msg,
-					systemInfo: ""
+					message: msg
 				});
 				socket.send(str);
 				scrollDown();
@@ -43,12 +42,14 @@
 			}
 
 			function checkName() {
-				var name = prompt('Enter your name');
-				if (name != '') {
+
+				var name = prompt('Enter Your Name: ');
+				if (name == null || name == '' || name == 'null') {
+					location.reload();
+				} else if (name != '') {
 					var str = JSON.stringify({
 						name: name,
-						message: '',
-						systemInfo: 'Name Setting'
+						message: 'Name Setting'
 					});
 					socket.send(str);
 				}
@@ -75,23 +76,22 @@
 				} else if (name != '') {
 					var str = JSON.stringify({
 						name: name,
-						message: '',
-						systemInfo: 'Name Setting'
+						message: 'Name Setting'
 					});
 					setTimeout(function(){
 						socket.send(str);
 					}, 1000);
 				}
 			} else {
-				
+
 			}
 
 			socket.onmessage = function(data) {
 				var msg = JSON.parse(data.data);
 
-				if (msg.systemInfo == 'Error! Name Exists!') {
+				if (msg.message == 'Error! Name Exists!') {
 					checkName();
-				} else if(msg.systemInfo == 'Name Settings OK'){
+				} else if(msg.message == 'Name Settings OK'){
 					document.cookie = 'name=' + msg.sender;
 					console.log('add cookie' + msg.sender);
 				} else {
@@ -99,8 +99,11 @@
 					var str = '';
 					var visitor = '';
 
-					if (msg.message.localeCompare("") == 0) {
-						str = '<div class="row"><div class="col-4 offset-4 text-center p-1 mt-1 mb-1 rounded" style="background-color: rgba(220,178,57, 0.7); color: white;">' + msg.systemInfo + '</div></div>';
+					console.log(msg.message);
+					console.log("New visitor! Say Hi to " + msg.sender + "!");
+					console.log(msg.message.localeCompare("New visitor! Say Hi to " + msg.sender + "!"));
+					if (msg.message.localeCompare("New visitor! Say Hi to " + msg.sender + "!") == 0 || msg.message.localeCompare(msg.sender + " left.") == 0) {
+						str = '<div class="row"><div class="col-4 offset-4 text-center p-1 mt-1 mb-1 rounded" style="background-color: rgba(220,178,57, 0.7); color: white;">' + msg.message + '</div></div>';
 					} else if (msg.sender.localeCompare(name) == 0) {
 						str = '<div class="row m-1"><div class="col-6 offset-6"><div id="self-box" class="p-2 mr-2 mt-1 mb-1 float-right">' + msg.message +'</div></div></div>';
 					} else {

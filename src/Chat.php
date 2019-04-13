@@ -41,11 +41,10 @@ class Chat implements MessageComponentInterface {
         $msg = json_decode($msg);
         $name = $msg->name;
 
-        if (strcmp($msg->systemInfo, 'Name Setting') == 0) {
+        if (strcmp($msg->message, 'Name Setting') == 0) {
             if (array_search($name, $this->names)) {
-                $msg = Array('systemInfo' => 'Error! Name Exists!',
-                             'sender' => $name,
-                             'message' => '',
+                $msg = Array('sender' => $name,
+                             'message' => 'Error! Name Exists!',
                              'visitors' => $this->names);
                 $msg = json_encode($msg);
 
@@ -55,17 +54,15 @@ class Chat implements MessageComponentInterface {
                 $this->names[$from->resourceId] = $name;
 
                 $msg = 'Name Settings OK';
-                $msg = Array('systemInfo' => $msg,
-                             'sender' => $name,
-                             'message' => '',
+                $msg = Array('sender' => $name,
+                             'message' => $msg,
                              'visitors' => $this->names);
                 $msg = json_encode($msg);
                 $from->send($msg);
 
                 $msg = 'New visitor! Say Hi to ' . $name . '!';
-                $msg = Array('systemInfo' => $msg,
-                             'sender' => $name,
-                             'message' => '',
+                $msg = Array('sender' => $name,
+                             'message' => $msg,
                              'visitors' => $this->names);
                 $msg = json_encode($msg);
 
@@ -75,8 +72,7 @@ class Chat implements MessageComponentInterface {
             }
         } else {
             $msg = $msg->message;
-            $msg = Array('systemInfo' => '', 
-                         'sender' => $name, 
+            $msg = Array('sender' => $name, 
                          'message' => $msg, 
                          'visitors' => $this->names);
             $msg = json_encode($msg);
@@ -95,18 +91,22 @@ class Chat implements MessageComponentInterface {
         // The connection is closed, remove it, as we can no longer send it messages
         $this->clients->detach($conn);
 
-        $name = $this->names[$conn->resourceId];
-        unset($this->names[$conn->resourceId]);
-        $msg = $name . " left.";
-        $msg = Array('systemInfo' => $msg, 'sender' => $name, 'message' => '', 'visitors' => $this->names);
-        $msg = json_encode($msg);
+        if (array_key_exists($conn->resourceId, $this->names)) {
+            $name = $this->names[$conn->resourceId];
+            unset($this->names[$conn->resourceId]);
+            $msg = $name . " left.";
+            $msg = Array('sender' => $name, 
+                         'message' => $msg, 
+                         'visitors' => $this->names);
+            $msg = json_encode($msg);
 
-        foreach ($this->clients as $client) {
-            $client->send($msg);
+            foreach ($this->clients as $client) {
+                $client->send($msg);
+            }
+
+            $log = "({$conn->resourceId}, {$name}) is disconnected\n";
+            $this->log($log);
         }
-
-        $log = "({$conn->resourceId}, {$name}) is disconnected\n";
-        $this->log($log);
     }
 
     public function onError(ConnectionInterface $conn, \Exception $e) {

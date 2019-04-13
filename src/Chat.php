@@ -17,36 +17,78 @@ class Chat implements MessageComponentInterface {
 
     public function onOpen(ConnectionInterface $conn) {
         // Store the new connection to send messages to later
-        $this->clients->attach($conn);
-        $name = $this->getName($conn);
-        $this->names[$conn->resourceId] = $name;
 
 
-        $msg = "New visitor! Say Hi to " . $name . "!";
-        $msg = Array('systemInfo' => $msg, 'sender' => $name, 'message' => '', 'visitors' => $this->names);
-        $msg = json_encode($msg);
+        // $this->clients->attach($conn);
+        // $name = $this->getName($conn);
+        // $this->names[$conn->resourceId] = $name;
 
-        foreach ($this->clients as $client) {
-            $client->send($msg);
-        }        
 
-        $log = "({$conn->resourceId}, {$name}) is connected\n";
-        $this->log($log);
+        // $msg = "New visitor! Say Hi to " . $name . "!";
+        // $msg = Array('systemInfo' => $msg, 'sender' => $name, 'message' => '', 'visitors' => $this->names);
+        // $msg = json_encode($msg);
+
+        // foreach ($this->clients as $client) {
+        //     $client->send($msg);
+        // }        
+
+        // $log = "({$conn->resourceId}, {$name}) is connected\n";
+        // $this->log($log);
     }
 
     public function onMessage(ConnectionInterface $from, $msg) {
 
-        $name = $this->names[$from->resourceId];
-        $msg = Array('systemInfo' => '', 'sender' => $name, 'message' => $msg, 'visitors' => $this->names);
-        $msg = json_encode($msg);
+        $msg = json_decode($msg);
+        $name = $msg->name;
+
+        if (strcmp($msg->systemInfo, 'Name Setting') == 0) {
+            if (array_search($name, $this->names)) {
+                $msg = Array('systemInfo' => 'Error! Name Exists!',
+                             'sender' => $name,
+                             'message' => '',
+                             'visitors' => $this->names);
+                $msg = json_encode($msg);
+
+                $from->send($msg);
+            } else {
+                $this->clients->attach($from);
+                $this->names[$from->resourceId] = $name;
+
+                $msg = 'Name Settings OK';
+                $msg = Array('systemInfo' => $msg,
+                             'sender' => $name,
+                             'message' => '',
+                             'visitors' => $this->names);
+                $msg = json_encode($msg);
+                $from->send($msg);
+
+                $msg = 'New visitor! Say Hi to ' . $name . '!';
+                $msg = Array('systemInfo' => $msg,
+                             'sender' => $name,
+                             'message' => '',
+                             'visitors' => $this->names);
+                $msg = json_encode($msg);
+
+                foreach ($this->clients as $client) {
+                    $client->send($msg);
+                }
+            }
+        } else {
+            $msg = $msg->message;
+            $msg = Array('systemInfo' => '', 
+                         'sender' => $name, 
+                         'message' => $msg, 
+                         'visitors' => $this->names);
+            $msg = json_encode($msg);
 
 
-        foreach ($this->clients as $client) {
-            $client->send($msg);
+            foreach ($this->clients as $client) {
+                $client->send($msg);
+            }
+
+            $log = "({$from->resourceId}, {$name}) send: {$msg} to others\n";
+            $this->log($log);
         }
-
-        $log = "({$from->resourceId}, {$name}) send: {$msg} to others\n";
-        $this->log($log);
     }
 
     public function onClose(ConnectionInterface $conn) {

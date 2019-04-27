@@ -16,7 +16,7 @@ class Chat implements MessageComponentInterface {
     }
 
     public function onOpen(ConnectionInterface $conn) {
-        $log = $conn->resourceId . ' is connected\n';
+        $log = $conn->resourceId . " is connected\n";
         $this->log($log);
     }
 

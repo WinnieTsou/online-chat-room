@@ -1,5 +1,5 @@
 
-var socket = new WebSocket('ws://localhost:8081/chatRoom/bin/chat-server.php');
+var socket = new WebSocket('ws://localhost:8081/');
 
 $(document).ready(function(){
 	function sendMessage() {
